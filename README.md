@@ -4,6 +4,10 @@
 
 ---
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/Agent-Hellboy/codefile.svg)](https://pkg.go.dev/github.com/Agent-Hellboy/codefile)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Agent-Hellboy/codefile)](https://goreportcard.com/report/github.com/Agent-Hellboy/codefile)
+[![codecov](https://codecov.io/gh/Agent-Hellboy/codefile/branch/main/graph/badge.svg)](https://codecov.io/gh/Agent-Hellboy/codefile)
+
 ## Features
 
 - **Content-Based Detection**: 
