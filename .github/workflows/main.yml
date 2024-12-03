@@ -1,0 +1,40 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23.2'
+
+    - name: Run tests with coverage
+      run: |
+        go test -v -coverprofile=coverage.tmp $(go list ./... | grep -v /codefile/a)
+        cat coverage.tmp | grep -v "/codefile/a" | grep -v "_test\.go" > coverage.txt
+        rm coverage.tmp
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.txt
+        flags: unittests
+        fail_ci_if_error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}  
+
+        
