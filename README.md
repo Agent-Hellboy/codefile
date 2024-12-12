@@ -2,7 +2,7 @@
 
 `codefile` is a Go library for detecting the programming language of a given file. It uses content-based detection with weighted keyword matching, ensuring robust and accurate identification, even for files without extensions.
 
-It uses [TOFU](##TOFU)
+It uses [TOFU](#TOFU)
 
 ---
 
