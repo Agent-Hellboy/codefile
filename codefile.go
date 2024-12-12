@@ -1,23 +1,5 @@
 package codefile
 
-import (
-	"bufio"
-	"os"
-	"strings"
-)
-
-// Keyword represents a content pattern with an associated weight
-type Keyword struct {
-	Pattern string
-	Weight  int
-}
-
-// Language represents a programming language with associated keywords
-type Language struct {
-	Name     string
-	Keywords []Keyword
-}
-
 // Predefined language rules
 var languages = []Language{
 	{
@@ -64,36 +46,16 @@ var languages = []Language{
 
 // DetectCodeFileType detects the programming language of a file
 func DetectCodeFileType(filePath string) (string, bool) {
-	file, err := os.Open(filePath)
+	lines, err := ScanFile(filePath, 50) // Scanning up to 50 lines
 	if err != nil {
 		return "", false
 	}
-	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	lineCount := 0
-	languageScores := make(map[string]int)
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		lineCount++
-
-		for _, lang := range languages {
-			for _, keyword := range lang.Keywords {
-				if strings.Contains(line, keyword.Pattern) {
-					languageScores[lang.Name] += keyword.Weight
-				}
-			}
-		}
-
-		if lineCount > 20 {
-			break
-		}
-	}
+	scores := ScoreLines(lines, languages)
 
 	var bestMatch string
 	highestScore := 0
-	for lang, score := range languageScores {
+	for lang, score := range scores {
 		if score > highestScore {
 			highestScore = score
 			bestMatch = lang
@@ -103,6 +65,5 @@ func DetectCodeFileType(filePath string) (string, bool) {
 	if highestScore > 3 {
 		return bestMatch, true
 	}
-
 	return "", false
 }

@@ -1,59 +1,113 @@
 package codefile
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 )
 
+// Helper function to create a temporary file with sample content
+func createTempFile(t *testing.T, content string) string {
+	t.Helper()
+	tmpFile, err := ioutil.TempFile("", "codefile_test_*.txt")
+	if err != nil {
+		t.Fatalf("Failed to create temporary file: %v", err)
+	}
+	defer tmpFile.Close()
+
+	_, err = tmpFile.WriteString(content)
+	if err != nil {
+		t.Fatalf("Failed to write to temporary file: %v", err)
+	}
+
+	return tmpFile.Name()
+}
+
+// TestDetectCodeFileType tests the language detection functionality
 func TestDetectCodeFileType(t *testing.T) {
-	// Setup: Create temporary test files with representative content
-	testFiles := map[string]string{
-		"main.py":       "def hello():\n    print('Hello, World!')\nimport os\n",
-		"main.go":       "package main\nfunc main() {\n    println(\"Hello, World!\")\n}",
-		"main.cpp":      "#include <iostream>\nint main() {\n    std::cout << \"Hello, World!\";\n    return 0;\n}",
-		"script.sh":     "#!/bin/bash\necho 'Hello, World!'\n",
-		"unknown.txt":   "Some random text\nWith no specific language features\n",
-		"java_sample":   "class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}",
-		"javascript.js": "function greet() {\n    console.log('Hello, World!');\n}\n",
-	}
-
-	// Create files
-	for name, content := range testFiles {
-		err := os.WriteFile(name, []byte(content), 0644)
-		if err != nil {
-			t.Fatalf("Failed to create test file %s: %v", name, err)
-		}
-	}
-
-	// Cleanup after tests
-	defer func() {
-		for name := range testFiles {
-			_ = os.Remove(name)
-		}
-	}()
-
-	// Test cases
-	testCases := []struct {
-		fileName string
-		expected string
+	tests := []struct {
+		name         string
+		content      string
+		expectedLang string
+		expectedOk   bool
 	}{
-		{"main.py", "Python"},
-		{"main.go", "Go"},
-		{"main.cpp", "C++"},
-		{"script.sh", "Shell"},
-		{"unknown.txt", ""},
-		{"java_sample", "Java"},
-		{"javascript.js", "JavaScript"},
+		{
+			name: "Python file",
+			content: `
+				def hello_world():
+					print("Hello, world!")
+				class Test:
+					def __init__(self):
+						pass
+			`,
+			expectedLang: "Python",
+			expectedOk:   true,
+		},
+		{
+			name: "Go file",
+			content: `
+				package main
+
+				import "fmt"
+
+				func main() {
+					fmt.Println("Hello, world!")
+				}
+			`,
+			expectedLang: "Go",
+			expectedOk:   true,
+		},
+		{
+			name: "C++ file",
+			content: `
+				#include <iostream>
+				using namespace std;
+
+				int main() {
+					cout << "Hello, world!" << endl;
+					return 0;
+				}
+			`,
+			expectedLang: "C++",
+			expectedOk:   true,
+		},
+		{
+			name: "JavaScript file",
+			content: `
+				function helloWorld() {
+					console.log("Hello, world!");
+				}
+				const x = 10;
+			`,
+			expectedLang: "JavaScript",
+			expectedOk:   true,
+		},
+		{
+			name:         "Empty file",
+			content:      "",
+			expectedLang: "",
+			expectedOk:   false,
+		},
+		{
+			name: "Ambiguous content",
+			content: `
+				# A comment that matches multiple languages
+				print("Hello, ambiguous world!")
+			`,
+			expectedLang: "",
+			expectedOk:   false,
+		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.fileName, func(t *testing.T) {
-			result, ok := DetectCodeFileType(tc.fileName)
-			if ok && result != tc.expected {
-				t.Errorf("Expected %s, got %s", tc.expected, result)
-			}
-			if !ok && tc.expected != "" {
-				t.Errorf("Expected %s, but detection failed", tc.expected)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpFile := createTempFile(t, tt.content)
+			defer os.Remove(tmpFile)
+
+			lang, ok := DetectCodeFileType(tmpFile)
+			if lang != tt.expectedLang || ok != tt.expectedOk {
+				t.Errorf("DetectCodeFileType(%s) = (%q, %v), want (%q, %v)",
+					tt.name, lang, ok, tt.expectedLang, tt.expectedOk)
 			}
 		})
 	}
